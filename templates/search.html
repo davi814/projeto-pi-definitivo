@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar Profissionais - ServiçosPro{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Buscar Profissionais</h1>
+        
+        <form action="{{ url_for('search') }}" method="get" class="search-filters">
+            <div class="filter-group">
+                <select name="category" class="form-input">
+                    <option value="">Todas as Categorias</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.args.get('category') == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <input type="text" name="city" placeholder="Cidade" class="form-input" value="{{ request.args.get('city', '') }}">
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+        </form>
+        
+        <div class="professionals-grid">
+            {% if professionals %}
+                {% for prof in professionals %}
+                    <div class="professional-card">
+                        <div class="prof-photo">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <h3>{{ prof.user.name }}</h3>
+                        <p class="category">{{ prof.category.name }}</p>
+                        
+                        <div class="rating">
+                            {% for i in range(5) %}
+                                {% if i < prof.average_rating %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span>({{ prof.review_count }})</span>
+                        </div>
+                        
+                        <p class="location"><i class="fas fa-map-marker-alt"></i> {{ prof.user.city }}, {{ prof.user.state }}</p>
+                        
+                        {% if prof.starting_price %}
+                            <p class="price">A partir de R$ {{ "%.2f"|format(prof.starting_price) }}</p>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('professional_profile', professional_id=prof.id) }}" class="btn-primary btn-block">Ver Perfil</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <h3>Nenhum profissional encontrado</h3>
+                    <p>Tente ajustar os filtros de busca</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

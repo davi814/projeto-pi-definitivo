@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ServiçosPro{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Minhas Solicitações</h1>
+        
+        <div class="dashboard-layout">
+            <div class="dashboard-sidebar">
+                <div class="profile-summary">
+                    <div class="prof-photo">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h3>{{ current_user.name }}</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> {{ current_user.city }}, {{ current_user.state }}</p>
+                    
+                    <a href="{{ url_for('search') }}" class="btn-primary btn-block">
+                        <i class="fas fa-search"></i> Buscar Profissionais
+                    </a>
+                </div>
+            </div>
+            
+            <div class="dashboard-main">
+                <h2>Orçamentos Solicitados</h2>
+                
+                {% if requests %}
+                    <div class="requests-table">
+                        {% for req in requests %}
+                            <div class="request-card">
+                                <div class="request-header">
+                                    <h3>{{ req.title }}</h3>
+                                    <span class="status-badge status-{{ req.status }}">
+                                        {% if req.status == 'pending' %}Pendente
+                                        {% elif req.status == 'accepted' %}Aceito
+                                        {% elif req.status == 'rejected' %}Recusado
+                                        {% elif req.status == 'completed' %}Concluído
+                                        {% else %}{{ req.status }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <p><strong>Profissional:</strong> 
+                                    <a href="{{ url_for('professional_profile', professional_id=req.professional.id) }}">
+                                        {{ req.professional.user.name }}
+                                    </a>
+                                </p>
+                                <p><strong>Categoria:</strong> {{ req.professional.category.name }}</p>
+                                <p><strong>Descrição:</strong> {{ req.description }}</p>
+                                
+                                {% if req.budget %}
+                                    <p><strong>Orçamento:</strong> R$ {{ "%.2f"|format(req.budget) }}</p>
+                                {% endif %}
+                                
+                                {% if req.preferred_date %}
+                                    <p><strong>Data Preferencial:</strong> {{ req.preferred_date }}</p>
+                                {% endif %}
+                                
+                                <p class="text-muted"><small>Enviado em {{ req.created_at.strftime('%d/%m/%Y às %H:%M') }}</small></p>
+                                
+                                {% if req.status == 'completed' %}
+                                    <div class="request-actions">
+                                        <a href="{{ url_for('review_professional', professional_id=req.professional.id) }}" class="btn-primary btn-sm">
+                                            <i class="fas fa-star"></i> Avaliar Profissional
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>Nenhuma solicitação ainda</h3>
+                        <p>Busque profissionais e solicite orçamentos para seus projetos</p>
+                        <a href="{{ url_for('search') }}" class="btn-primary">Buscar Profissionais</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

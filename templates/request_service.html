@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitar Orçamento - ServiçosPro{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>Solicitar Orçamento</h2>
+                <p class="subtitle">Para: {{ professional.user.name }} - {{ professional.category.name }}</p>
+                
+                <form method="POST" action="{{ url_for('request_service', professional_id=professional.id) }}">
+                    <div class="form-group">
+                        <label for="title">Título do Serviço</label>
+                        <input type="text" id="title" name="title" required class="form-input" placeholder="Ex: Instalação de ar condicionado">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Descrição Detalhada</label>
+                        <textarea id="description" name="description" rows="5" required class="form-input" placeholder="Descreva o que você precisa em detalhes..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="budget">Orçamento Estimado (R$)</label>
+                        <input type="number" id="budget" name="budget" step="0.01" class="form-input" placeholder="500.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="preferred_date">Data Preferencial</label>
+                        <input type="text" id="preferred_date" name="preferred_date" class="form-input" placeholder="Ex: Próxima semana">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary btn-block">Enviar Solicitação</button>
+                    <a href="{{ url_for('professional_profile', professional_id=professional.id) }}" class="btn-secondary btn-block">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

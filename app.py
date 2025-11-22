@@ -5,7 +5,7 @@ from validate_docbr import CPF
 import requests
 from datetime import datetime
 import re
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 # ------------------------------
 # CONFIGURAÇÃO DO APP
@@ -16,11 +16,11 @@ app.secret_key = "uma_chave_muito_secreta"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# importar e inicializar db (database.py)
+# importar e inicializar db
 from database import db
 db.init_app(app)
 
-# importar models (depois do db.init_app para evitar import loop)
+# importar models
 from models import User, Professional, ServiceCategory, ServiceRequest, Review
 
 # LOGIN MANAGER
@@ -39,7 +39,7 @@ cpf_validator = CPF()
 # HELPERS
 # ------------------------------
 def normalize_cpf_masked(cpf_masked: str) -> str:
-    """Transforma em 000.000.000-00 (se possível)."""
+    """Transforma para 000.000.000-00."""
     if not cpf_masked:
         return ''
     digits = re.sub(r'\D', '', cpf_masked)
@@ -48,12 +48,13 @@ def normalize_cpf_masked(cpf_masked: str) -> str:
     return f"{digits[0:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:11]}"
 
 def validate_cep_garanhuns(cep: str):
-    """Valida via ViaCEP e garante cidade Garanhuns-PE. Retorna dict ou None."""
+    """Valida CEP via ViaCEP e garante Garanhuns–PE."""
     if not cep:
         return None
     cep_digits = re.sub(r'\D', '', cep)
     if len(cep_digits) != 8:
         return None
+
     try:
         r = requests.get(f"https://viacep.com.br/ws/{cep_digits}/json/", timeout=5)
         if not r.ok:
@@ -63,12 +64,13 @@ def validate_cep_garanhuns(cep: str):
             return None
         if data.get('localidade') != 'Garanhuns' or data.get('uf') != 'PE':
             return None
+
         return {
             'cep': cep_digits,
-            'address': data.get('logradouro',''),
-            'neighborhood': data.get('bairro',''),
-            'city': data.get('localidade',''),
-            'state': data.get('uf','')
+            'address': data.get('logradouro', ''),
+            'neighborhood': data.get('bairro', ''),
+            'city': data.get('localidade', ''),
+            'state': data.get('uf', '')
         }
     except Exception:
         return None
@@ -76,14 +78,16 @@ def validate_cep_garanhuns(cep: str):
 # ------------------------------
 # ROTAS
 # ------------------------------
+
 @app.route('/')
 def index():
     categories = ServiceCategory.query.all()
     professionals = Professional.query.order_by(Professional.created_at.desc()).limit(6).all()
     return render_template('index.html', categories=categories, professionals=professionals)
 
-# Registro
-@app.route('/registro', methods=['GET','POST'])
+
+# REGISTRO
+@app.route('/registro', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -98,7 +102,7 @@ def register():
         phone = request.form.get('phone')
         cep_raw = request.form.get('cep')
 
-        if not cpf_mask or not cpf_validator.validate(re.sub(r'\D','',cpf_mask)):
+        if not cpf_mask or not cpf_validator.validate(re.sub(r'\D', '', cpf_mask)):
             flash('CPF inválido', 'error')
             return render_template('register.html')
 
@@ -126,15 +130,19 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
+
         login_user(user)
+
         if user_type == 'professional':
             return redirect(url_for('complete_professional_profile'))
+
         return redirect(url_for('index'))
 
     return render_template('register.html')
 
-# Login
-@app.route('/login', methods=['GET','POST'])
+
+# LOGIN
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -145,52 +153,67 @@ def login():
         password = request.form.get('password')
 
         user = User.query.filter_by(cpf=cpf_mask).first()
+
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
             return redirect(url_for('dashboard'))
+
         flash('CPF ou senha incorretos', 'error')
 
     return render_template('login.html')
 
-# Logout
+
+# LOGOUT
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# Search
+
+# SEARCH
 @app.route('/search')
 def search():
-    name = request.args.get('name','').strip()
-    category_id = request.args.get('category','')
-    neighborhood = request.args.get('neighborhood','').strip()
-    min_price = request.args.get('min_price','')
-    max_price = request.args.get('max_price','')
+    name = request.args.get('name', '').strip()
+    category_id = request.args.get('category', '')
+    neighborhood = request.args.get('neighborhood', '').strip()
+    min_price = request.args.get('min_price', '')
+    max_price = request.args.get('max_price', '')
 
     query = Professional.query.join(User)
+
     if name:
         query = query.filter(User.name.ilike(f"%{name}%"))
+
     if category_id and category_id.isdigit():
         query = query.filter(Professional.category_id == int(category_id))
+
     if neighborhood:
         query = query.filter(User.neighborhood.ilike(f"%{neighborhood}%"))
+
     if min_price:
-        try: query = query.filter(Professional.starting_price >= float(min_price))
-        except: pass
+        try:
+            query = query.filter(Professional.starting_price >= float(min_price))
+        except:
+            pass
+
     if max_price:
-        try: query = query.filter(Professional.starting_price <= float(max_price))
-        except: pass
+        try:
+            query = query.filter(Professional.starting_price <= float(max_price))
+        except:
+            pass
 
     professionals = query.all()
     categories = ServiceCategory.query.all()
+
     return render_template('search.html', professionals=professionals, categories=categories)
 
-# Complete professional profile
-@app.route('/completar-perfil-profissional', methods=['GET','POST'])
+
+# COMPLETAR PERFIL PROFISSIONAL
+@app.route('/completar-perfil-profissional', methods=['GET', 'POST'])
 @login_required
 def complete_professional_profile():
-    if not current_user.is_authenticated or current_user.user_type != 'professional':
+    if current_user.user_type != 'professional':
         return redirect(url_for('index'))
 
     if Professional.query.filter_by(user_id=current_user.id).first():
@@ -205,75 +228,87 @@ def complete_professional_profile():
             starting_price=float(request.form.get('starting_price')) if request.form.get('starting_price') else None,
             response_time='24 horas'
         )
+
         db.session.add(prof)
         db.session.commit()
+
         flash('Perfil profissional criado com sucesso!', 'success')
         return redirect(url_for('dashboard'))
 
     categories = ServiceCategory.query.all()
     return render_template('complete_profile.html', categories=categories)
 
-# Dashboard
+
+# DASHBOARD
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    if not current_user.is_authenticated or not hasattr(current_user, 'id'):
-        flash("Você precisa estar logado para acessar o dashboard.", "error")
-        return redirect(url_for('login'))
-
     if current_user.user_type == 'professional':
+
         prof = Professional.query.filter_by(user_id=current_user.id).first()
         if not prof:
             return redirect(url_for('complete_professional_profile'))
-        requests_list = ServiceRequest.query.filter_by(professional_id=prof.id).order_by(ServiceRequest.created_at.desc()).all()
+
+        requests_list = ServiceRequest.query.filter_by(
+            professional_id=prof.id
+        ).order_by(ServiceRequest.created_at.desc()).all()
+
         return render_template('dashboard_professional.html', professional=prof, requests=requests_list)
+
     else:
-        requests_list = ServiceRequest.query.filter_by(client_id=current_user.id).order_by(ServiceRequest.created_at.desc()).all()
+        requests_list = ServiceRequest.query.filter_by(
+            client_id=current_user.id
+        ).order_by(ServiceRequest.created_at.desc()).all()
+
         return render_template('dashboard_client.html', requests=requests_list)
 
-# Perfil do usuário
+
+# PERFIL
 @app.route('/perfil')
 @login_required
 def perfil():
-    if not current_user.is_authenticated or not hasattr(current_user, 'id'):
-        flash("Você precisa estar logado para acessar o perfil.", "error")
-        return redirect(url_for('login'))
     return render_template("perfil.html")
 
-# Excluir próprio usuário
-@app.route('/perfil/excluir', methods=['POST'])
+
+# EXCLUIR PRÓPRIO USUÁRIO — versão corrigida
+@app.route('/excluir_proprio_usuario', methods=['POST'])
 @login_required
 def excluir_proprio_usuario():
-    if not current_user.is_authenticated or not hasattr(current_user, 'id'):
-        flash("Você precisa estar logado para excluir sua conta.", "error")
-        return redirect(url_for('login'))
 
-    user = current_user
+    user = User.query.get(int(current_user.id))
+
+    if not user:
+        flash("Usuário não encontrado.", "error")
+        return redirect(url_for('dashboard'))
+
+    user_id = user.id
+
+    # Logout antes de excluir
     logout_user()
 
-    # Excluir perfil profissional se existir
-    prof = Professional.query.filter_by(user_id=user.id).first()
-    if prof:
-        db.session.delete(prof)
-
-    # Excluir solicitações e avaliações
+    # Delete Requests
     ServiceRequest.query.filter(
-        or_(
-            ServiceRequest.client_id == user.id,
-            ServiceRequest.professional_id == user.id
-        )
+        (ServiceRequest.client_id == user_id) |
+        (ServiceRequest.professional_id == user_id)
     ).delete(synchronize_session=False)
 
-    Review.query.filter_by(user_id=user.id).delete(synchronize_session=False)
+    # Delete Reviews
+    Review.query.filter_by(client_id=user_id).delete(synchronize_session=False)
 
-    # Excluir usuário
+    # Delete Professional profile
+    prof = Professional.query.filter_by(user_id=user_id).first()
+    if prof:
+        Review.query.filter_by(professional_id=prof.id).delete(synchronize_session=False)
+        db.session.delete(prof)
+
     db.session.delete(user)
     db.session.commit()
 
-    flash("Sua conta foi excluída com sucesso.", "success")
+    flash("Conta excluída com sucesso!", "success")
     return redirect(url_for('index'))
 
-# API endpoint validar cep
+
+# API – validar CEP
 @app.route('/api/validar-cep/<cep>')
 def api_validate_cep(cep):
     data = validate_cep_garanhuns(cep)
@@ -281,7 +316,8 @@ def api_validate_cep(cep):
         return jsonify(data)
     return jsonify({'error': 'CEP inválido ou fora de Garanhuns–PE'}), 400
 
-# Run app
+
+# EXECUÇÃO
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

@@ -27,7 +27,17 @@
                         </div>
                     </div>
                     
-                    <a href="{{ url_for('professional_profile', professional_id=professional.id) }}" class="btn-secondary btn-block">Ver Meu Perfil</a>
+                    <a href="{{ url_for('professional_profile', professional_id=professional.id) }}" class="btn-secondary btn-block">
+                        Ver Meu Perfil
+                    </a>
+                    <a href="{{ url_for('perfil') }}" class="btn-secondary btn-block">
+                        Meu Perfil / Configurações
+                    </a>
+                    <form method="POST" action="{{ url_for('excluir_proprio_usuario') }}" onsubmit="return confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.')">
+                        <button type="submit" class="btn-danger btn-block mt-2">
+                            Excluir Conta
+                        </button>
+                    </form>
                 </div>
             </div>
             

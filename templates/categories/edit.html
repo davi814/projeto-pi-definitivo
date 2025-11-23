@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Editar Categoria</h2>
+
+<form method="POST">
+    <label>Nome:</label>
+    <input type="text" class="form-control" name="name" value="{{ category.name }}" required>
+
+    <button type="submit" class="btn btn-primary" style="margin-top: 15px;">Atualizar</button>
+</form>
+
+<a href="{{ url_for('list_categories') }}" class="btn btn-secondary" style="margin-top: 15px;">Voltar</a>
+
+{% endblock %}

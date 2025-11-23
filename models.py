@@ -1,164 +1,179 @@
-# models.py
 from database import db
 from flask_login import UserMixin
 from datetime import datetime
 
-# -------------------------
-# USERS
-# -------------------------
+
+# =====================================================
+# USER
+# =====================================================
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
+
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.String(120), nullable=False)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(20), nullable=True)
+    phone = db.Column(db.String(20))
 
     password_hash = db.Column(db.String(255), nullable=False)
-    user_type = db.Column(db.String(20), nullable=False, default='client')
+    user_type = db.Column(db.String(20), default='client')  # client / professional
 
-    cep = db.Column(db.String(9), nullable=True)
-    address = db.Column(db.String(200), nullable=True)
-    neighborhood = db.Column(db.String(120), nullable=True)
-    city = db.Column(db.String(120), nullable=True)
-    state = db.Column(db.String(2), nullable=True)
+    # Endereço
+    cep = db.Column(db.String(9))
+    address = db.Column(db.String(200))
+    neighborhood = db.Column(db.String(120))
+    city = db.Column(db.String(120))
+    state = db.Column(db.String(2))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # RELACIONAMENTOS
+    # Relacionamentos
     professional_profile = db.relationship(
-        'Professional',
-        backref='user',
+        "Professional",
+        backref="user",
         uselist=False,
-        cascade='all, delete-orphan'
+        cascade="all, delete-orphan"
     )
 
     client_requests = db.relationship(
-        'ServiceRequest',
-        backref='client',
-        foreign_keys='ServiceRequest.client_id',
-        cascade='all, delete-orphan'
+        "ServiceRequest",
+        backref="client",
+        foreign_keys="ServiceRequest.client_id",
+        cascade="all, delete-orphan"
     )
 
     reviews_given = db.relationship(
-        'Review',
-        backref='client',
-        foreign_keys='Review.client_id',
-        cascade='all, delete-orphan'
+        "Review",
+        backref="client",
+        foreign_keys="Review.client_id",
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self):
-        return f"<User {self.id} {self.name}>"
+        return f"<User {self.id} - {self.name}>"
 
 
-# -------------------------
-# SERVICE CATEGORY
-# -------------------------
+# =====================================================
+# SERVICE CATEGORY (Profissões / Áreas)
+# =====================================================
 class ServiceCategory(db.Model):
-    __tablename__ = 'service_categories'
+    __tablename__ = "service_categories"
+
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(140), nullable=False, unique=True)
-    description = db.Column(db.Text, nullable=True)
+    name = db.Column(db.String(140), unique=True, nullable=False)
+    description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     professionals = db.relationship(
-        'Professional',
-        backref='category',
-        cascade='all, delete-orphan'
+        "Professional",
+        backref="category",
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self):
         return f"<Category {self.name}>"
 
 
-# -------------------------
+# =====================================================
 # PROFESSIONAL
-# -------------------------
+# =====================================================
 class Professional(db.Model):
-    __tablename__ = 'professionals'
+    __tablename__ = "professionals"
+
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey('service_categories.id'))
+    category_id = db.Column(db.Integer, db.ForeignKey("service_categories.id"))
 
-    bio = db.Column(db.Text, nullable=True)
-    experience_years = db.Column(db.Integer, nullable=True)
-    starting_price = db.Column(db.Float, nullable=True)
-    profile_photo = db.Column(db.String(255), nullable=True)
+    bio = db.Column(db.Text)
+    experience_years = db.Column(db.Integer)
+    starting_price = db.Column(db.Float)
+
+    # -----------------------------
+    # NOVAS FUNCIONALIDADES
+    # -----------------------------
+    profile_photo = db.Column(db.String(255))            # foto de perfil
+    portfolio_photos = db.Column(db.Text)                # lista JSON de imagens
+    services_offered = db.Column(db.Text)                # lista JSON com serviços
+    tags = db.Column(db.String(255))                     # ex: "pintor, eletricista"
+    availability = db.Column(db.String(255))             # ex: "Seg-Sex 08:00-18:00"
 
     verified = db.Column(db.Boolean, default=False)
-    response_time = db.Column(db.String(50), default='24 horas')
+    response_time = db.Column(db.String(50), default="24 horas (estimado)")
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relacionamentos
     service_requests = db.relationship(
-        'ServiceRequest',
-        backref='professional',
-        cascade='all, delete-orphan'
+        "ServiceRequest",
+        backref="professional",
+        cascade="all, delete-orphan"
     )
 
     reviews = db.relationship(
-        'Review',
-        backref='professional',
-        cascade='all, delete-orphan'
+        "Review",
+        backref="professional",
+        cascade="all, delete-orphan"
     )
 
+    # Propriedades adicionais
     @property
     def average_rating(self):
         if not self.reviews:
             return 0
-        total = sum(r.rating for r in self.reviews)
-        return total / len(self.reviews)
+        return sum(r.rating for r in self.reviews) / len(self.reviews)
 
     @property
     def review_count(self):
         return len(self.reviews)
 
     def __repr__(self):
-        return f"<Professional {self.id} - user {self.user_id}>"
+        return f"<Professional {self.id} - User {self.user_id}>"
 
 
-# -------------------------
+# =====================================================
 # SERVICE REQUEST
-# -------------------------
+# =====================================================
 class ServiceRequest(db.Model):
-    __tablename__ = 'service_requests'
+    __tablename__ = "service_requests"
+
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    professional_id = db.Column(db.Integer, db.ForeignKey('professionals.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey("professionals.id"), nullable=False)
 
     title = db.Column(db.String(200))
     description = db.Column(db.Text)
     budget = db.Column(db.Float)
     preferred_date = db.Column(db.String(100))
 
-    status = db.Column(db.String(40), default='pendente')
+    status = db.Column(db.String(40), default="pendente")
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     review = db.relationship(
-        'Review',
-        backref='service_request',
+        "Review",
+        backref="service_request",
         uselist=False,
-        cascade='all, delete-orphan'
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self):
-        return f"<Request {self.id} status={self.status}>"
+        return f"<Request {self.id} - {self.status}>"
 
 
-# -------------------------
-# REVIEW (AGORA VINCULADO A ServiceRequest)
-# -------------------------
+# =====================================================
+# REVIEW
+# =====================================================
 class Review(db.Model):
-    __tablename__ = 'reviews'
+    __tablename__ = "reviews"
+
     id = db.Column(db.Integer, primary_key=True)
 
-    request_id = db.Column(db.Integer, db.ForeignKey('service_requests.id'), nullable=False)
-    professional_id = db.Column(db.Integer, db.ForeignKey('professionals.id'), nullable=False)
-    client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    request_id = db.Column(db.Integer, db.ForeignKey("service_requests.id"), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey("professionals.id"), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text)

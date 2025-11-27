@@ -1,19 +1,28 @@
-# app.py - versão final atualizada
+# app.py - Versão revisada completa (CRUD categorias + front + proteções)
+import os
 import re
 from datetime import datetime
 
 import requests
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask import (
+    Flask, render_template, request, redirect, url_for, flash, jsonify, abort
+)
+from flask_login import (
+    LoginManager, login_user, logout_user, login_required, current_user
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from validate_docbr import CPF
 from sqlalchemy import or_
+from functools import wraps
 
 # ---------- Config do Flask ----------
 app = Flask(__name__)
-app.secret_key = "uma_chave_muito_secreta"  # troque por variável de ambiente em produção
+# Em produção - use variável de ambiente para SECRET_KEY
+app.secret_key = os.environ.get("SECRET_KEY", "uma_chave_muito_secreta")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", "sqlite:///database.db"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ---------- Inicializar DB ----------
@@ -48,6 +57,22 @@ def load_user(user_id):
 
 # ---------- CPF validator ----------
 cpf_validator = CPF()
+
+# --------------------------
+# ADMIN DECORATOR
+# --------------------------
+def admin_required(f):
+    """Garante que apenas usuários com user_type == 'admin' acessem a rota."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Faça login para acessar esta área.', 'danger')
+            return redirect(url_for('login'))
+        if getattr(current_user, 'user_type', None) != 'admin':
+            flash('Acesso negado: área administrativa.', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --------------------------
 # HELPERS
@@ -89,7 +114,7 @@ def validate_cep_garanhuns(cep: str):
         return None
 
 # --------------------------
-# ROTAS
+# ROTAS PÚBLICAS / FRONT
 # --------------------------
 
 @app.route('/')
@@ -97,7 +122,6 @@ def index():
     categories = ServiceCategory.query.order_by(ServiceCategory.name).all()
     professionals = Professional.query.order_by(Professional.created_at.desc()).limit(6).all()
     return render_template('index.html', categories=categories, professionals=professionals)
-
 
 # --------------------------
 # REGISTRO
@@ -163,7 +187,6 @@ def register():
 
     return render_template('register.html')
 
-
 # --------------------------
 # LOGIN
 # --------------------------
@@ -185,7 +208,6 @@ def login():
 
     return render_template('login.html')
 
-
 # --------------------------
 # LOGOUT
 # --------------------------
@@ -194,7 +216,6 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('index'))
-
 
 # --------------------------
 # SEARCH
@@ -232,7 +253,6 @@ def search():
     categories = ServiceCategory.query.order_by(ServiceCategory.name).all()
     return render_template('search.html', professionals=professionals, categories=categories)
 
-
 # --------------------------
 # COMPLETAR PERFIL PROFISSIONAL
 # --------------------------
@@ -269,7 +289,6 @@ def complete_professional_profile():
     categories = ServiceCategory.query.order_by(ServiceCategory.name).all()
     return render_template('complete_profile.html', categories=categories)
 
-
 # --------------------------
 # DASHBOARD
 # --------------------------
@@ -286,7 +305,6 @@ def dashboard():
         requests_list = ServiceRequest.query.filter_by(client_id=current_user.id).order_by(ServiceRequest.created_at.desc()).all()
         return render_template('dashboard_client.html', requests=requests_list)
 
-
 # --------------------------
 # PERFIL
 # --------------------------
@@ -296,7 +314,6 @@ def perfil():
     user = User.query.get_or_404(current_user.id)
     prof = Professional.query.filter_by(user_id=user.id).first()
     return render_template("perfil.html", user=user, prof=prof)
-
 
 # --------------------------
 # EXCLUIR PRÓPRIO USUÁRIO
@@ -336,7 +353,6 @@ def excluir_proprio_usuario():
     flash("Conta excluída com sucesso!", "success")
     return redirect(url_for('index'))
 
-
 # --------------------------
 # API – validar CEP
 # --------------------------
@@ -347,18 +363,19 @@ def api_validate_cep(cep):
         return jsonify(data)
     return jsonify({'error': 'CEP inválido ou fora de Garanhuns–PE'}), 400
 
-
 # --------------------------
-# CATEGORIAS CRUD
+# CATEGORIAS CRUD (PROTEGIDAS PELO ADMIN)
 # --------------------------
 @app.route('/categorias')
 @login_required
+@admin_required
 def listar_categorias():
     categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
     return render_template('categorias/listar.html', categorias=categorias)
 
 @app.route('/categorias/add', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def adicionar_categoria():
     if request.method == 'POST':
         nome = (request.form.get('name') or '').strip()
@@ -378,6 +395,7 @@ def adicionar_categoria():
 
 @app.route('/categorias/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def editar_categoria(id):
     categoria = ServiceCategory.query.get_or_404(id)
     if request.method == 'POST':
@@ -390,17 +408,26 @@ def editar_categoria(id):
 
 @app.route('/categorias/delete/<int:id>', methods=['POST'])
 @login_required
+@admin_required
 def deletar_categoria(id):
     categoria = ServiceCategory.query.get_or_404(id)
     # evita exclusão se houver profissionais vinculados
-    if getattr(categoria, 'professionals', None) and len(categoria.professionals) > 0:
+    try:
+        has_profs = (categoria.professionals is not None) and (len(categoria.professionals) > 0)
+    except Exception:
+        # caso relationship seja dynamic ou outro tipo, tente count
+        try:
+            has_profs = categoria.professionals.count() > 0
+        except Exception:
+            has_profs = False
+
+    if has_profs:
         flash('Não é possível remover: existem profissionais vinculados a essa categoria.', 'danger')
         return redirect(url_for('listar_categorias'))
     db.session.delete(categoria)
     db.session.commit()
     flash('Categoria removida.', 'success')
     return redirect(url_for('listar_categorias'))
-
 
 # --------------------------
 # PROFISSÕES CRUD
@@ -468,7 +495,6 @@ def deletar_profissao(id):
     flash('Perfil profissional excluído.', 'success')
     return redirect(url_for('dashboard'))
 
-
 # --------------------------
 # EDITAR PERFIL DO USUÁRIO
 # --------------------------
@@ -493,11 +519,45 @@ def editar_perfil():
 
     return render_template('usuarios/edit.html', user=user, prof=prof, categories=categories)
 
+# --------------------------
+# UTILITÁRIOS (startup)
+# --------------------------
+def create_app_admin_if_missing(admin_email=None, admin_password=None):
+    """
+    Função utilitária opcional:
+    - se não existir usuário admin, cria um com o email/senha passados.
+    Use com cuidado em produção.
+    """
+    admin_email = admin_email or os.environ.get('DEFAULT_ADMIN_EMAIL')
+    admin_password = admin_password or os.environ.get('DEFAULT_ADMIN_PASSWORD')
+
+    if not admin_email or not admin_password:
+        return
+
+    with app.app_context():
+        existing = User.query.filter_by(email=admin_email).first()
+        if existing:
+            return
+        admin_user = User(
+            name="Administrador",
+            cpf="000.000.000-00",
+            email=admin_email,
+            password_hash=generate_password_hash(admin_password),
+            user_type="admin",
+            created_at=datetime.utcnow()
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+        print("Admin criado:", admin_email)
 
 # --------------------------
 # execução
 # --------------------------
 if __name__ == '__main__':
+    # Cria tabelas se necessário
     with app.app_context():
         db.create_all()
+        # Opcional: criar admin se definir variáveis de ambiente DEFAULT_ADMIN_EMAIL/PASSWORD
+        # create_app_admin_if_missing()
+
     app.run(debug=True)

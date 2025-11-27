@@ -1,6 +1,7 @@
 from database import db
 from flask_login import UserMixin
 from datetime import datetime
+import json
 
 
 # =====================================================
@@ -55,7 +56,7 @@ class User(db.Model, UserMixin):
 
 
 # =====================================================
-# SERVICE CATEGORY (Profissões / Áreas)
+# SERVICE CATEGORY
 # =====================================================
 class ServiceCategory(db.Model):
     __tablename__ = "service_categories"
@@ -83,21 +84,18 @@ class Professional(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
-
     category_id = db.Column(db.Integer, db.ForeignKey("service_categories.id"))
 
     bio = db.Column(db.Text)
     experience_years = db.Column(db.Integer)
     starting_price = db.Column(db.Float)
 
-    # -----------------------------
     # NOVAS FUNCIONALIDADES
-    # -----------------------------
-    profile_photo = db.Column(db.String(255))            # foto de perfil
-    portfolio_photos = db.Column(db.Text)                # lista JSON de imagens
-    services_offered = db.Column(db.Text)                # lista JSON com serviços
-    tags = db.Column(db.String(255))                     # ex: "pintor, eletricista"
-    availability = db.Column(db.String(255))             # ex: "Seg-Sex 08:00-18:00"
+    profile_photo = db.Column(db.String(255))            
+    portfolio_photos = db.Column(db.Text)                # JSON
+    services_offered = db.Column(db.Text)                # JSON
+    tags = db.Column(db.String(255))                     
+    availability = db.Column(db.String(255))             
 
     verified = db.Column(db.Boolean, default=False)
     response_time = db.Column(db.String(50), default="24 horas (estimado)")
@@ -117,7 +115,20 @@ class Professional(db.Model):
         cascade="all, delete-orphan"
     )
 
-    # Propriedades adicionais
+    # Helpers JSON
+    def get_portfolio_photos(self):
+        try:
+            return json.loads(self.portfolio_photos or "[]")
+        except:
+            return []
+
+    def get_services(self):
+        try:
+            return json.loads(self.services_offered or "[]")
+        except:
+            return []
+
+    # Propriedades úteis
     @property
     def average_rating(self):
         if not self.reviews:

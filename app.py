@@ -123,6 +123,23 @@ def index():
     professionals = Professional.query.order_by(Professional.created_at.desc()).limit(6).all()
     return render_template('index.html', categories=categories, professionals=professionals)
 
+
+@app.route('/admin')
+def admin():
+    return render_template('admin/index.html')
+
+@app.route('/criarcategoriaadmin')
+def admin_create_category():
+    return render_template('admin/categories/create.html')
+
+@app.route('/listacategoriaadmin')
+def admin_list_categories():
+    return render_template('admin/categories/list.html')
+
+@app.route('/editarcategoriaadmin')
+def admin_edit_categories():
+    return render_template('admin/categories/edit.html')
+
 # --------------------------
 # REGISTRO
 # --------------------------

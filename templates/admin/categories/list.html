@@ -13,14 +13,14 @@
 
     <!-- MENSAGENS -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
     {% endwith %}
 
     <div class="card shadow-sm">
@@ -42,12 +42,11 @@
                         <td>{{ category.description }}</td>
                         <td>
                             <a href="{{ url_for('admin_edit_category', category_id=category.id) }}"
-                               class="btn btn-warning btn-sm">Editar</a>
+                                class="btn btn-warning btn-sm">Editar</a>
 
-                            <form action="{{ url_for('admin_delete_category', category_id=category.id) }}"
-                                  method="POST"
-                                  style="display:inline-block;"
-                                  onsubmit="return confirm('Tem certeza que deseja excluir esta categoria?');">
+                            <form action="{{ url_for('admin_delete_category', category_id=category.id) }}" method="POST"
+                                style="display:inline-block;"
+                                onsubmit="return confirm('Tem certeza que deseja excluir esta categoria?');">
 
                                 <button type="submit" class="btn btn-danger btn-sm">
                                     Excluir

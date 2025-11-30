@@ -5,7 +5,7 @@ from datetime import datetime
 
 import requests
 from flask import (
-    Flask, render_template, request, redirect, url_for, flash, jsonify, abort
+    Flask, render_template, request, redirect, url_for, flash, jsonify, abort, session
 )
 from flask_login import (
     LoginManager, login_user, logout_user, login_required, current_user
@@ -14,7 +14,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from validate_docbr import CPF
 from sqlalchemy import or_
 from functools import wraps
-
+import base64
 # ---------- Config do Flask ----------
 app = Flask(__name__)
 # Em produção - use variável de ambiente para SECRET_KEY
@@ -367,7 +367,6 @@ def api_validate_cep(cep):
 # --------------------------
 # CATEGORIAS CRUD (PROTEGIDAS PELO ADMIN)
 # --------------------------
- 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     menssagem = None
@@ -377,13 +376,22 @@ def admin():
         senha = request.form.get('password')
 
         if login == 'admin' and senha == 'senha123':
-            return render_template('admin/categorias/base_admin.html')
+            session['usuario'] = True
+            return render_template('admin/base.html')
         else:
             menssagem = 'Usuario ou senha incorretos.'
-            return render_template('admin/index.html', menssagem=menssagem)
+            return render_template('admin/login_admin.html', menssagem=menssagem)
 
-    return render_template('admin/index.html', menssagem=menssagem) 
+    return render_template('admin/login_admin.html', menssagem=menssagem)
 
+@app.route('/logout_admin')
+def logout_admin():
+    if 'usuario' in session:
+        session.pop('usuario', None)
+        return redirect(url_for('admin'))
+    else:
+        return redirect(url_for('admin'))
+    
 @app.route('/admin/categorias/listar')
 def listar_categorias():
     categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()

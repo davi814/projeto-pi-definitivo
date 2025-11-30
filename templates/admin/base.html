@@ -1,133 +1,131 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-br">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ServiçosPro - Encontre Profissionais de Confiança{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta charset="utf-8" />
+    <title>{% block title %}Vendas{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    {% block extra_css %}{% endblock %}
+
+    <!-- Fonte Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Link para o css externo -->
+
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    {% block head_extra %}{% endblock %}
 </head>
-<body>
-    <nav class="navbar">
-        <div class="container nav-container">
-            <a href="{{ url_for('index') }}" class="logo">
-                <i class="fas fa-handshake"></i> ServiçosPro
-            </a>
-            
-            <div class="nav-links">
-                <a href="{{ url_for('search') }}">Buscar Profissionais</a>
 
-                {% if current_user.is_authenticated %}
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+    <div class="app-wrapper">
 
-                    <!-- BOTÃO: EDITAR PERFIL DE USUÁRIO -->
-                  <a href="{{ url_for('editar_perfil') }}">Meu Perfil</a>
+        <!-- NAVBAR -->
+        <nav class="app-header navbar navbar-expand bg-body">
+            <div class="container-fluid">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                            <i class="bi bi-list"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item d-none d-md-block">
+                        <a href="#" class="nav-link">Início</a>
+                    </li>
+                </ul>
 
-
-                    <!-- SE FOR PROFISSIONAL -->
-                    {% if current_user.user_type == 'professional' %}
-                        <a href="{{ url_for('complete_professional_profile') }}">Perfil Profissional</a>
-
-                    {% endif %}
-
-                    <!-- SE FOR ADMINISTRADOR -->
-                    {% if current_user.user_type == 'admin' %}
-                        <a href="{{ url_for('list_categories') }}">Categorias</a>
-                        <a href="{{ url_for('admin_professionals') }}">Profissionais</a>
-                        <a href="{{ url_for('admin_users') }}">Usuários</a>
-                    {% endif %}
-
-                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('logout') }}" class="btn-secondary">Sair</a>
-
-                {% else %}
-                    <a href="{{ url_for('login') }}">Entrar</a>
-                    <a href="{{ url_for('register') }}?type=professional" class="btn-primary">Seja um Profissional</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                        <button class="close-alert">&times;</button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="footer">
-        <div class="container footer-content">
-            
-            <div class="footer-section">
-                <h4>Sobre</h4>
-                <ul>
-                    <li><a href="#">Quem Somos</a></li>
-                    <li><a href="#">Como Funciona</a></li>
-                    <li><a href="#">Contato</a></li>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown user-menu">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img src="{{ url_for('static', filename='dist/assets/img/user2-160x160.jpg') }}"
+                                class="user-image rounded-circle shadow" alt="User Image" />
+                            <span class="d-none d-md-inline">Usuário</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+                            <li class="user-header text-bg-primary">
+                                <img src="{{ url_for('static', filename='dist/assets/img/user2-160x160.jpg') }}"
+                                    class="rounded-circle shadow" alt="User Image" />
+                                <p>
+                                    Usuário do Sistema<br>
+                                    <small>Desde 2025</small>
+                                </p>
+                            </li>
+                            <li class="user-footer">
+                                <a href="#" class="btn btn-default btn-flat">Perfil</a>
+                                <a href="#" class="btn btn-default btn-flat float-end">Sair</a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
-            
-            <div class="footer-section">
-                <h4>Categorias</h4>
-                <ul>
-                    <li><a href="{{ url_for('search') }}?category=1">Reformas</a></li>
-                    <li><a href="{{ url_for('search') }}?category=2">Serviços Domésticos</a></li>
-                    <li><a href="{{ url_for('search') }}?category=3">Tecnologia</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h4>Suporte</h4>
-                <ul>
-                    <li><a href="#">Central de Ajuda</a></li>
-                    <li><a href="#">Termos de Uso</a></li>
-                    <li><a href="#">Privacidade</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h4>Segurança</h4>
-                <div class="trust-badges">
-                    <div class="badge"><i class="fas fa-shield-alt"></i> Seguro</div>
-                    <div class="badge"><i class="fas fa-lock"></i> Privacidade</div>
-                </div>
+        </nav>
+
+        <!-- SIDEBAR -->
+        <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+            <div class="sidebar-brand">
+                <a href="#" class="brand-link">
+                    <img src="{{ url_for('static', filename='dist/assets/img/AdminLTELogo.png') }}" alt="Logo"
+                        class="brand-image opacity-75 shadow" />
+                    <span class="brand-text fw-light">Vendas</span>
+                </a>
             </div>
 
-        </div>
-        
-        <div class="footer-bottom">
-            <div class="container">
-                <p>&copy; 2024 ServiçosPro. Todos os direitos reservados.</p>
-            </div>
-        </div>
-    </footer>
+            <div class="sidebar-wrapper">
+                <nav class="mt-2">
+                    <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
+                        <li class="nav-header">MENU</li>
+                        <li class="nav-item">
+                            <a href="{{url_for ('listar_categorias')}}" class="nav-link">
+                                <i class="nav-icon bi bi-book"></i>
+                                <p>Listar Categoria</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-box-seam-fill"></i>
+                                <p>Listar Produtos</p>
+                            </a>
+                        </li>
 
-    <script>
-        document.querySelectorAll('.close-alert').forEach(button => {
-            button.addEventListener('click', () => {
-                button.parentElement.remove();
-            });
-        });
-        
-        setTimeout(() => {
-            document.querySelectorAll('.alert').forEach(alert => {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 300);
-            });
-        }, 5000);
-    </script>
-    
-    {% block extra_js %}{% endblock %}
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="bi bi-person-fill"></i>
+                                <p>Listar usuários</p>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO CENTRAL -->
+        <main class="app-main">
+            <div class="app-content-header px-4 pt-3">
+
+            </div>
+            <div class="app-content px-4 pb-4">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <div class="float-end d-none d-sm-inline">PNT WEB</div>
+            <strong>&copy; 2025 <a href="#">Vendas</a>.</strong> Todos os direitos reservados.
+        </footer>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"></script>
+    <script src="{{ url_for('static', filename='dist/js/adminlte.js') }}"></script>
+    {% block scripts %}{% endblock %}
 </body>
+
 </html>

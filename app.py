@@ -124,22 +124,6 @@ def index():
     return render_template('index.html', categories=categories, professionals=professionals)
 
 
-@app.route('/admin')
-def admin():
-    return render_template('admin/index.html')
-
-@app.route('/criarcategoriaadmin')
-def admin_create_category():
-    return render_template('admin/categories/create.html')
-
-@app.route('/listacategoriaadmin')
-def admin_list_categories():
-    return render_template('admin/categories/list.html')
-
-@app.route('/editarcategoriaadmin')
-def admin_edit_categories():
-    return render_template('admin/categories/edit.html')
-
 # --------------------------
 # REGISTRO
 # --------------------------
@@ -383,14 +367,31 @@ def api_validate_cep(cep):
 # --------------------------
 # CATEGORIAS CRUD (PROTEGIDAS PELO ADMIN)
 # --------------------------
-@app.route('/categorias')
-@login_required
-@admin_required
-def listar_categorias():
-    categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
-    return render_template('categorias/listar.html', categorias=categorias)
 
-@app.route('/categorias/add', methods=['GET', 'POST'])
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    menssagem = None
+
+    if request.method == 'POST':
+        login = request.form.get('login')
+        senha = request.form.get('password')
+
+        if login == 'admin' and senha == 'senha123':
+            return render_template('admin/categorias/base_admin.html')
+        else:
+            menssagem = 'Usuario ou senha incorretos.'
+            return render_template('admin/index.html', menssagem=menssagem)
+
+    return render_template('admin/index.html', menssagem=menssagem)
+
+#@app.route('admin/categorias')
+#@login_required
+#@admin_required
+#def listar_categorias():
+ #   categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
+  #  return render_template('admin/categorias/listar.html', categorias=categorias)
+
+@app.route('/categorias/criar', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def adicionar_categoria():
@@ -408,9 +409,9 @@ def adicionar_categoria():
         db.session.commit()
         flash('Categoria adicionada com sucesso!', 'success')
         return redirect(url_for('listar_categorias'))
-    return render_template('categorias/add.html')
+    return render_template('admin/categorias/criar.html')
 
-@app.route('/categorias/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/categorias/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def editar_categoria(id):
@@ -421,9 +422,9 @@ def editar_categoria(id):
         db.session.commit()
         flash('Categoria atualizada.', 'success')
         return redirect(url_for('listar_categorias'))
-    return render_template('categorias/edit.html', categoria=categoria)
+    return render_template('admin/categorias/editar.html', categoria=categoria)
 
-@app.route('/categorias/delete/<int:id>', methods=['POST'])
+@app.route('/categorias/exluir/<int:id>', methods=['POST'])
 @login_required
 @admin_required
 def deletar_categoria(id):

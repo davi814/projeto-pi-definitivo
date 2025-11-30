@@ -1,14 +1,14 @@
-{% extends 'admin/base_admin.html' %}
-{% block title %} Listar Produto {% endblock %}
+{% extends 'admin/profissoes/base_admin.html' %}
+{% block title %} Listar Profissão {% endblock %}
 
 {% block content %}
 <div class="content">
     <h3 style="background-color: rgb(198, 197, 197);">
-        Cadastrar Produtos </h3>
+        Cadastrar Profissão </h3>
     <div class="container">
         <form method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="nome_produto">Nome do Produto:</label>
+                <label for="nome_produto">Nome da Profissão:</label>
                 <input type="text" class="form-control" id="nome_produto" name="nome_produto" required>
             </div>
             <div class="form-group">
@@ -28,7 +28,7 @@
 
                 <select name="Categoria" class="form-select" required>
 
-                {% for i in categorias %}
+                {% for i in profissoes %}
                     {% if i['ativo'] == "True" %}
                 <option value="{{i['id']}}">{{i['nome'] }}</option>
                     {% endif %}

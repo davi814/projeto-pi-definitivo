@@ -367,7 +367,7 @@ def api_validate_cep(cep):
 # --------------------------
 # CATEGORIAS CRUD (PROTEGIDAS PELO ADMIN)
 # --------------------------
-
+ 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     menssagem = None
@@ -382,18 +382,14 @@ def admin():
             menssagem = 'Usuario ou senha incorretos.'
             return render_template('admin/index.html', menssagem=menssagem)
 
-    return render_template('admin/index.html', menssagem=menssagem)
+    return render_template('admin/index.html', menssagem=menssagem) 
 
-#@app.route('admin/categorias')
-#@login_required
-#@admin_required
-#def listar_categorias():
- #   categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
-  #  return render_template('admin/categorias/listar.html', categorias=categorias)
+@app.route('/admin/categorias/listar')
+def listar_categorias():
+    categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
+    return render_template('admin/categorias/listar.html', categorias=categorias)
 
-@app.route('/categorias/criar', methods=['GET', 'POST'])
-@login_required
-@admin_required
+@app.route('/admin/categorias/criar', methods=['GET', 'POST'])
 def adicionar_categoria():
     if request.method == 'POST':
         nome = (request.form.get('name') or '').strip()
@@ -411,9 +407,7 @@ def adicionar_categoria():
         return redirect(url_for('listar_categorias'))
     return render_template('admin/categorias/criar.html')
 
-@app.route('/categorias/editar/<int:id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
+@app.route('/admin/categorias/editar/<int:id>', methods=['GET', 'POST'])
 def editar_categoria(id):
     categoria = ServiceCategory.query.get_or_404(id)
     if request.method == 'POST':
@@ -424,9 +418,7 @@ def editar_categoria(id):
         return redirect(url_for('listar_categorias'))
     return render_template('admin/categorias/editar.html', categoria=categoria)
 
-@app.route('/categorias/exluir/<int:id>', methods=['POST'])
-@login_required
-@admin_required
+@app.route('/admin/categorias/exluir/<int:id>', methods=['POST'])
 def deletar_categoria(id):
     categoria = ServiceCategory.query.get_or_404(id)
     # evita exclusão se houver profissionais vinculados
@@ -450,14 +442,12 @@ def deletar_categoria(id):
 # --------------------------
 # PROFISSÕES CRUD
 # --------------------------
-@app.route('/profissoes')
-@login_required
+@app.route('/admin/profissoes')
 def listar_profissoes():
     profs = Professional.query.order_by(Professional.created_at.desc()).all()
     return render_template('profissoes/listar.html', profissoes=profs)
 
-@app.route('/profissoes/add', methods=['GET', 'POST'])
-@login_required
+@app.route('/admin/profissoes/criar', methods=['GET', 'POST'])
 def adicionar_profissao():
     categories = ServiceCategory.query.order_by(ServiceCategory.name).all()
     if request.method == 'POST':
@@ -478,10 +468,9 @@ def adicionar_profissao():
         db.session.commit()
         flash('Perfil profissional criado!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('profissoes/add.html', categories=categories)
+    return render_template('admin/profissoes/criar.html', categories=categories)
 
-@app.route('/profissoes/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
+@app.route('/admin/profissoes/editar/<int:id>', methods=['GET', 'POST'])
 def editar_profissao(id):
     prof = Professional.query.get_or_404(id)
     if prof.user_id != current_user.id:
@@ -497,15 +486,14 @@ def editar_profissao(id):
         db.session.commit()
         flash('Perfil atualizado.', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('profissoes/edit.html', prof=prof, categories=categories)
+    return render_template('admin/profissoes/editar.html', prof=prof, categories=categories)
 
-@app.route('/profissoes/delete/<int:id>', methods=['POST'])
-@login_required
+@app.route('/admin/profissoes/excluir/<int:id>', methods=['POST'])
 def deletar_profissao(id):
     prof = Professional.query.get_or_404(id)
     if prof.user_id != current_user.id:
         flash('Acesso negado.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('listar_profissoes'))
     # Remove reviews associados ao profissional
     Review.query.filter_by(professional_id=prof.id).delete(synchronize_session=False)
     db.session.delete(prof)
@@ -516,7 +504,7 @@ def deletar_profissao(id):
 # --------------------------
 # EDITAR PERFIL DO USUÁRIO
 # --------------------------
-@app.route('/perfil/editar', methods=['GET', 'POST'])
+@app.route('/usuarios/perfil/editar', methods=['GET', 'POST'])
 @login_required
 def editar_perfil():
     user = User.query.get_or_404(current_user.id)
@@ -535,38 +523,12 @@ def editar_perfil():
         flash('Perfil atualizado com sucesso!', 'success')
         return redirect(url_for('perfil'))
 
-    return render_template('usuarios/edit.html', user=user, prof=prof, categories=categories)
+    return render_template('usuarios/editar.html', user=user, prof=prof, categories=categories)
 
 # --------------------------
 # UTILITÁRIOS (startup)
 # --------------------------
-def create_app_admin_if_missing(admin_email=None, admin_password=None):
-    """
-    Função utilitária opcional:
-    - se não existir usuário admin, cria um com o email/senha passados.
-    Use com cuidado em produção.
-    """
-    admin_email = admin_email or os.environ.get('DEFAULT_ADMIN_EMAIL')
-    admin_password = admin_password or os.environ.get('DEFAULT_ADMIN_PASSWORD')
 
-    if not admin_email or not admin_password:
-        return
-
-    with app.app_context():
-        existing = User.query.filter_by(email=admin_email).first()
-        if existing:
-            return
-        admin_user = User(
-            name="Administrador",
-            cpf="000.000.000-00",
-            email=admin_email,
-            password_hash=generate_password_hash(admin_password),
-            user_type="admin",
-            created_at=datetime.utcnow()
-        )
-        db.session.add(admin_user)
-        db.session.commit()
-        print("Admin criado:", admin_email)
 
 # --------------------------
 # execução

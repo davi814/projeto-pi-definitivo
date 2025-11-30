@@ -1,14 +1,14 @@
-{% extends 'admin/base_admin.html' %}
-{% block title %} Editar Produto {% endblock %}
+{% extends 'admin/profissoes/base_admin.html' %}
+{% block title %} Editar Profissão {% endblock %}
 
 {% block content %}
 <div class="content">
     <h3 style="background-color: rgb(198, 197, 197);">
-        Editar Produtos </h3>
+        Editar Profissão </h3>
     <div class="container">
         <form method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="nome_categoria">Nome do Produto:</label>
+                <label for="nome_categoria">Nome da Profissão:</label>
                 <input type="text" class="form-control" id="nome_produto" value="{{produto.nome}}" name="nome_produto"
                     required>
             </div>

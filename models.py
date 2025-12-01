@@ -64,6 +64,9 @@ class ServiceCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(140), unique=True, nullable=False)
     description = db.Column(db.Text)
+
+    image = db.Column(db.Text)  # <-- FALTAVA! AGORA A IMAGEM É SALVA AQUI
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     professionals = db.relationship(
@@ -74,6 +77,7 @@ class ServiceCategory(db.Model):
 
     def __repr__(self):
         return f"<Category {self.name}>"
+
 
 
 # =====================================================

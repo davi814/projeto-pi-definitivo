@@ -394,37 +394,67 @@ def logout_admin():
     
 @app.route('/admin/categorias/listar')
 def listar_categorias():
-    categorias = ServiceCategory.query.order_by(ServiceCategory.name).all()
+    categorias = ServiceCategory.query.all()
     return render_template('admin/categorias/listar.html', categorias=categorias)
 
 @app.route('/admin/categorias/criar', methods=['GET', 'POST'])
 def adicionar_categoria():
     if request.method == 'POST':
+        imagem = request.files.get('Imagem')
+        imagem_base64 = None
+
+        # Se uma imagem for enviada, converte para base64
+        if imagem and imagem.filename != "":
+            imagem_base64 = base64.b64encode(imagem.read()).decode('utf-8')
+
         nome = (request.form.get('name') or '').strip()
         descricao = (request.form.get('description') or '').strip()
+
         if not nome:
             flash('Nome da categoria é obrigatório.', 'danger')
             return redirect(url_for('adicionar_categoria'))
+
         if ServiceCategory.query.filter_by(name=nome).first():
             flash('Categoria já existe.', 'danger')
             return redirect(url_for('adicionar_categoria'))
-        cat = ServiceCategory(name=nome, description=descricao, created_at=datetime.utcnow())
+
+        cat = ServiceCategory(
+            name=nome,
+            description=descricao,
+            created_at=datetime.utcnow()
+            # image=imagem_base64  ← se tiver esse campo no seu model
+        )
+
         db.session.add(cat)
         db.session.commit()
+
         flash('Categoria adicionada com sucesso!', 'success')
         return redirect(url_for('listar_categorias'))
+
     return render_template('admin/categorias/criar.html')
+
 
 @app.route('/admin/categorias/editar/<int:id>', methods=['GET', 'POST'])
 def editar_categoria(id):
     categoria = ServiceCategory.query.get_or_404(id)
+
     if request.method == 'POST':
+        imagem = request.files.get('Imagem')
+
+        # Atualiza a imagem somente se uma nova for enviada
+        if imagem and imagem.filename != "":
+            imagem_base64 = base64.b64encode(imagem.read()).decode('utf-8')
+            # categoria.image = imagem_base64  ← se tiver o campo
+
         categoria.name = (request.form.get('name') or categoria.name).strip()
         categoria.description = (request.form.get('description') or categoria.description).strip()
+
         db.session.commit()
         flash('Categoria atualizada.', 'success')
         return redirect(url_for('listar_categorias'))
+
     return render_template('admin/categorias/editar.html', categoria=categoria)
+
 
 @app.route('/admin/categorias/exluir/<int:id>', methods=['POST'])
 def deletar_categoria(id):

@@ -6,22 +6,22 @@
 
     <h2 class="mb-3">Criar Nova Categoria</h2>
 
-    <!-- MENSAGENS -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
     {% endwith %}
 
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <form action="{{ url_for('adicionar_categoria') }}" method="POST">
+            <!-- AQUI ESTÁ A CORREÇÃO -->
+            <form action="{{ url_for('adicionar_categoria') }}" method="POST" enctype="multipart/form-data">
 
                 <div class="mb-3">
                     <label class="form-label">Nome da Categoria</label>
@@ -30,7 +30,13 @@
 
                 <div class="mb-3">
                     <label class="form-label">Descrição</label>
-                    <textarea name="description" class="form-control" rows="4" placeholder="Descreva a categoria..."></textarea>
+                    <textarea name="description" class="form-control" rows="4"
+                              placeholder="Descreva a categoria..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Imagem</label>
+                    <input type="file" name="Imagem" class="form-control" required>
                 </div>
 
                 <button type="submit" class="btn btn-success">Salvar</button>

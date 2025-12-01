@@ -55,7 +55,7 @@
                             <p class="price">A partir de R$ {{ "%.2f"|format(prof.starting_price) }}</p>
                         {% endif %}
                         
-                        <a href="{{ url_for('professional_profile', professional_id=prof.id) }}" class="btn-primary btn-block">Ver Perfil</a>
+                        <a href="{{ url_for('complete_professional_profile', professional_id=prof.id) }}" class="btn-primary btn-block">Ver Perfil</a>
                     </div>
                 {% endfor %}
             {% else %}

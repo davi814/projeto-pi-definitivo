@@ -453,7 +453,7 @@ def deletar_categoria(id):
 @app.route('/admin/profissoes')
 def listar_profissoes():
     profs = Professional.query.order_by(Professional.created_at.desc()).all()
-    return render_template('profissoes/listar.html', profissoes=profs)
+    return render_template('admin/profissoes/listar.html', profissoes=profs)
 
 @app.route('/admin/profissoes/criar', methods=['GET', 'POST'])
 def adicionar_profissao():
@@ -507,7 +507,7 @@ def deletar_profissao(id):
     db.session.delete(prof)
     db.session.commit()
     flash('Perfil profissional excluído.', 'success')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('admin/profissoes/excluir.html'))
 
 # --------------------------
 # EDITAR PERFIL DO USUÁRIO

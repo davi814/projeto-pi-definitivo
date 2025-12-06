@@ -316,6 +316,19 @@ def perfil():
     prof = Professional.query.filter_by(user_id=user.id).first()
     return render_template("perfil.html", user=user, prof=prof)
 
+
+# --------------------------
+# solicitar profissional
+# --------------------------
+@app.route('/profissional_solicitar')
+@login_required
+def profissional_solicitar():
+    user = User.query.get_or_404(current_user.id)
+    prof = Professional.query.filter_by(user_id=user.id).first()
+    return render_template("professional_solicitar.html", user=user, professional=prof)
+
+
+
 # --------------------------
 # EXCLUIR PRÓPRIO USUÁRIO
 # --------------------------

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,57 +10,64 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
+<style>
+    .btn-primary:hover {
+        color: white !important;
+        ;
+    }
+</style>
+
 <body>
     <nav class="navbar">
         <div class="container nav-container">
             <a href="{{ url_for('index') }}" class="logo">
                 <i class="fas fa-handshake"></i>Conectando Serviços
             </a>
-            
+
             <div class="nav-links">
                 <a href="{{ url_for('search') }}">Buscar Profissionais</a>
 
                 {% if current_user.is_authenticated %}
 
-                    <!-- BOTÃO: EDITAR PERFIL DE USUÁRIO -->
-                  <a href="{{ url_for('editar_perfil') }}">Meu Perfil</a>
+                <!-- BOTÃO: EDITAR PERFIL DE USUÁRIO -->
+                <a href="{{ url_for('editar_perfil') }}">Meu Perfil</a>
 
 
-                    <!-- SE FOR PROFISSIONAL -->
-                    {% if current_user.user_type == 'professional' %}
-                        <a href="{{ url_for('complete_professional_profile') }}">Perfil Profissional</a>
+                <!-- SE FOR PROFISSIONAL -->
+                {% if current_user.user_type == 'professional' %}
+                <a href="{{ url_for('complete_professional_profile') }}">Perfil Profissional</a>
 
-                    {% endif %}
+                {% endif %}
 
-                    <!-- SE FOR ADMINISTRADOR -->
-                    {% if current_user.user_type == 'admin' %}
-                        <a href="{{ url_for('list_categories') }}">Categorias</a>
-                        <a href="{{ url_for('admin_professionals') }}">Profissionais</a>
-                        <a href="{{ url_for('admin_users') }}">Usuários</a>
-                    {% endif %}
+                <!-- SE FOR ADMINISTRADOR -->
+                {% if current_user.user_type == 'admin' %}
+                <a href="{{ url_for('list_categories') }}">Categorias</a>
+                <a href="{{ url_for('admin_professionals') }}">Profissionais</a>
+                <a href="{{ url_for('admin_users') }}">Usuários</a>
+                {% endif %}
 
-                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('logout') }}" class="btn-secondary">Sair</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn-secondary">Sair</a>
 
                 {% else %}
-                    <a href="{{ url_for('login') }}">Entrar</a>
-                    <a href="{{ url_for('register') }}?type=professional" class="btn-primary">Seja um Profissional</a>
+                <a href="{{ url_for('login') }}">Entrar</a>
+                <a href="{{ url_for('register') }}?type=professional" class="btn-primary">Seja um Profissional</a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                        <button class="close-alert">&times;</button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+            <button class="close-alert">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% endwith %}
 
     <main>
@@ -68,7 +76,7 @@
 
     <footer class="footer">
         <div class="container footer-content">
-            
+
             <div class="footer-section">
                 <h4>Sobre</h4>
                 <ul>
@@ -77,7 +85,7 @@
                     <li><a href="#">Contato</a></li>
                 </ul>
             </div>
-            
+
             <div class="footer-section">
                 <h4>Categorias</h4>
                 <ul>
@@ -86,7 +94,7 @@
                     <li><a href="{{ url_for('search') }}?category=3">Tecnologia</a></li>
                 </ul>
             </div>
-            
+
             <div class="footer-section">
                 <h4>Suporte</h4>
                 <ul>
@@ -95,7 +103,7 @@
                     <li><a href="#">Privacidade</a></li>
                 </ul>
             </div>
-            
+
             <div class="footer-section">
                 <h4>Segurança</h4>
                 <div class="trust-badges">
@@ -105,7 +113,7 @@
             </div>
 
         </div>
-        
+
         <div class="footer-bottom">
             <div class="container">
                 <p>&copy; 2024 ServiçosPro. Todos os direitos reservados.</p>
@@ -119,7 +127,7 @@
                 button.parentElement.remove();
             });
         });
-        
+
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach(alert => {
                 alert.style.opacity = '0';
@@ -127,7 +135,8 @@
             });
         }, 5000);
     </script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>
